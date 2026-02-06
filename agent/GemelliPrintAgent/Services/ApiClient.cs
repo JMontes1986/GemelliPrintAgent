@@ -24,7 +24,7 @@ public class ApiClient
         _queueService = queueService;
         _httpClient = new HttpClient();
         
-        _apiBaseUrl = configuration["ApiBaseUrl"] ?? "https://your-vercel-app.vercel.app";
+        _apiBaseUrl = (configuration["ApiBaseUrl"] ?? "").TrimEnd('/');
         _agentToken = configuration["AgentToken"] ?? "";
 
         _httpClient.DefaultRequestHeaders.Authorization = 
@@ -33,6 +33,11 @@ public class ApiClient
 
     public async Task SendQueuedJobsAsync(CancellationToken cancellationToken)
     {
+        if (!IsApiConfigurationValid())
+        {
+            return;
+        }
+        
         var pendingJobs = _queueService.GetPendingJobs(50);
         
         if (pendingJobs.Count == 0) return;
@@ -69,5 +74,28 @@ public class ApiClient
         }
 
         _queueService.DeleteSentJobs(30);
+    }
+
+    private bool IsApiConfigurationValid()
+    {
+        if (string.IsNullOrWhiteSpace(_apiBaseUrl) ||
+            _apiBaseUrl.Contains("your-vercel-app.vercel.app", StringComparison.OrdinalIgnoreCase) ||
+            _apiBaseUrl.Contains("tu-app.vercel.app", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogError(
+                "ApiBaseUrl no configurada. Edita appsettings.json o variables de entorno con la URL real de Vercel."
+            );
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_agentToken))
+        {
+            _logger.LogError(
+                "AgentToken no configurado. Revisa appsettings.json o variables de entorno."
+            );
+            return false;
+        }
+
+        return true;
     }
 }
