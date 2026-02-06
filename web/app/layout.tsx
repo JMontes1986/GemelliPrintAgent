@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Control Impresiones Gemelli',
-  description: 'Sistema de auditoría de impresión para Windows 11',
+  description: 'Sistema de auditoría de impresión',
 }
 
 export default function RootLayout({
