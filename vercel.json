@@ -1,9 +1,13 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "cd web && npm install && npx prisma generate && npm run build",
+  "outputDirectory": "web/.next",
+  "installCommand": "cd web && npm install",
+  "framework": null,
+  "rewrites": [
     {
-      "src": "web/package.json",
-      "use": "@vercel/next"
+      "source": "/(.*)",
+      "destination": "/web/$1"
     }
   ]
 }
