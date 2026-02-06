@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getApiUrl } from '@/lib/api'
 
 interface Agent {
   id: string
@@ -32,7 +33,7 @@ export default function EquiposManager() {
   }, [])
 
   const fetchAgents = async () => {
-    const response = await fetch('/api/agents')
+    const response = await fetch(getApiUrl('/api/agents'))
     const data = await response.json()
     setAgents(data.agents)
   }
@@ -40,7 +41,7 @@ export default function EquiposManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const response = await fetch('/api/agents/register', {
+    const response = await fetch(getApiUrl('/api/agents/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
