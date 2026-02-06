@@ -1,19 +1,15 @@
 # Dependencies
 node_modules/
-web/node_modules/
 
 # Build outputs
 .next/
-web/.next/
-web/out/
+out/
 .vercel/
 
-# Environment
+# Environment variables
 .env
 .env.local
 .env*.local
-web/.env
-web/.env.local
 
 # Database
 *.db
@@ -35,17 +31,16 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Agent builds
+# Agent specific
 agent/bin/
 agent/obj/
 agent/Installer/publish/
 agent/Installer/*.msi
+agent/Installer/*.wixobj
+agent/Installer/*.wixpdb
 
-# NO ignorar estas carpetas importantes
-!web/app/
-!web/components/
-!web/lib/
-!web/prisma/
-!web/package.json
-!web/tsconfig.json
-!web/next.config.js
+# NO ignorar web/ - solo sus subdirectorios
+web/node_modules/
+web/.next/
+web/out/
+web/.env.local
