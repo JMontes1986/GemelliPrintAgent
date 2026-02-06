@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getApiUrl } from '@/lib/api'
 
 interface PrintJob {
   id: string
@@ -45,7 +46,7 @@ export default function PrintJobsTable() {
     })
 
     try {
-      const response = await fetch(`/api/print-jobs?${params}`)
+      const response = await fetch(getApiUrl(`/api/print-jobs?${params}`))
       const data = await response.json()
       setJobs(data.jobs)
       setTotalPages(data.pagination.pages)
