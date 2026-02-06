@@ -1,0 +1,102 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+
+jobs:
+  build-agent:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: Restore dependencies
+        run: dotnet restore agent/GemelliPrintAgent.sln
+      
+      - name: Build
+        run: dotnet build agent/GemelliPrintAgent.sln -c Release --no-restore
+      
+      - name: Publish
+        run: |
+          dotnet publish agent/GemelliPrintAgent/GemelliPrintAgent.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -o agent/Installer/publish
+      
+      - name: Setup WiX
+        run: |
+          dotnet tool install --global wix --version 4.0.4
+          wix --version
+      
+      - name: Build MSI
+        run: |
+          cd agent/Installer
+          wix build Product.wxs -d PublishDir=publish -ext WixToolset.UI.wixext -o GemelliPrintAgent.msi
+      
+      - name: Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: agent/Installer/GemelliPrintAgent.msi
+
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd web
+          npm ci
+      
+      - name: Generate Prisma Client
+        run: |
+          cd web
+          npx prisma generate
+      
+      - name: Build Next.js
+        run: |
+          cd web
+          npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  release:
+    needs: [build-agent, build-web]
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download MSI
+        uses: actions/download-artifact@v4
+        with:
+          name: installer
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: GemelliPrintAgent.msi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
