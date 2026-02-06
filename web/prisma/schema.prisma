@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("auditor") // admin, auditor
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Agent {
+  id          String    @id @default(cuid())
+  pcName      String
+  pcIp        String    @unique
+  area        String?
+  responsable String?
+  isPrimary   Boolean   @default(false)
+  enabled     Boolean   @default(true)
+  token       String    @unique
+  lastSeen    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  printJobs   PrintJob[]
+
+  @@index([pcIp])
+  @@index([enabled])
+}
+
+model Printer {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  model     String?
+  createdAt DateTime   @default(now())
+  printJobs PrintJob[]
+
+  @@index([name])
+}
+
+model PrintJob {
+  id              String    @id @default(cuid())
+  timestamp       DateTime  @default(now())
+  pcName          String
+  pcIp            String
+  usernameWindows String
+  printerName     String
+  jobId           String?
+  documentName    String    @default("N/D")
+  pagesPrinted    Int       @default(0)
+  copies          Int       @default(1)
+  duplex          Boolean?
+  color           Boolean?
+  status          String    @default("submitted") // submitted, completed, canceled, error
+  createdAt       DateTime  @default(now())
+  
+  agent           Agent?    @relation(fields: [pcIp], references: [pcIp])
+  printer         Printer?  @relation(fields: [printerName], references: [name])
+
+  @@index([timestamp])
+  @@index([pcIp])
+  @@index([usernameWindows])
+  @@index([printerName])
+  @@index([status])
+  @@index([timestamp, pcIp])
+}
+
+model UnknownDevice {
+  id        String   @id @default(cuid())
+  pcIp      String   @unique
+  pcName    String?
+  lastSeen  DateTime @default(now())
+  jobCount  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([pcIp])
+}
