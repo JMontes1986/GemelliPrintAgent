@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { getApiUrl } from '@/lib/api'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,7 +63,7 @@ export default async function DashboardPage() {
             </a>
           </li>
           <li>
-            <a href="/api/export/csv" className="text-blue-600 hover:underline">
+            <a href={getApiUrl('/api/export/csv')} className="text-blue-600 hover:underline">
               Exportar CSV
             </a>
           </li>
