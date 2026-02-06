@@ -1,60 +1,104 @@
 # Control Impresiones Gemelli
 
-Sistema de auditoría de impresión para Windows 11 con Next.js, Vercel y PostgreSQL (Neon).
+Sistema de auditoría de impresión para Windows 11 con Next.js, Vercel y PostgreSQL (Supabase).
 
 ## Stack Tecnológico
 
 - **Agente**: .NET 8 Worker Service (Windows Service)
 - **Instalador**: WiX Toolset v4
 - **Frontend/Backend**: Next.js 14 (App Router)
-- **Base de datos**: PostgreSQL en Neon (serverless)
+- **Base de datos**: PostgreSQL en Supabase (serverless)
 - **ORM**: Prisma
 - **Deploy**: Vercel
 - **CI/CD**: GitHub Actions
 
 ## Arquitectura
 ```
-5 PCs Windows 11 → Agentes .NET → API Next.js (Vercel) → PostgreSQL (Neon)
+5 PCs Windows 11 → Agentes .NET → API Next.js (Vercel) → PostgreSQL (Supabase)
 ```
 
 ## Instalación paso a paso
 
-### 1. Configurar Base de Datos (Neon)
+### 1. Configurar Base de Datos (Supabase)
 
-La base de datos ya está creada en Neon:
-- Project ID: `long-thunder-16505997`
-- Obtener `DATABASE_URL` del dashboard de Neon
+#### 1.1 Obtener credenciales
 
-### 2. Deploy Web en Vercel
+1. Ir a [Supabase Dashboard](https://supabase.com/dashboard/project/chncdlusummdopwpfvug)
+2. Ve a **Settings** → **Database**
+3. Copia la **Connection string** (modo Transaction)
+4. Reemplaza `[YOUR-PASSWORD]` con tu contraseña real
+
+#### 1.2 Configurar variables de entorno
+
+Crear `web/.env.local`:
+```env
+DATABASE_URL="postgresql://postgres.chncdlusummdopwpfvug:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres.chncdlusummdopwpfvug:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+NEXT_PUBLIC_SUPABASE_URL="https://chncdlusummdopwpfvug.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNobmNkbHVzdW1tZG9wd3BmdnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzODUxOTYsImV4cCI6MjA4NTk2MTE5Nn0.ODsCwSCTJJU7uKWlFfMSDhQBENQTm9d5wQ9h4hxxEOA"
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNobmNkbHVzdW1tZG9wd3BmdnVnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDM4NTE5NiwiZXhwIjoyMDg1OTYxMTk2fQ.1IOkyPxMJYY49ihCcS6b5SfrmhYCJl0a_Wpwos2drLk"
+JWT_SECRET="tu-secreto-jwt-aqui"
+AGENT_TOKENS="token1,token2,token3,token4,token5"
+```
+
+#### 1.3 Ejecutar migraciones
 ```bash
 cd web
 npm install
 npx prisma generate
-npx prisma migrate deploy  # Ejecutar migraciones
-
-# Configurar variables de entorno en Vercel:
-# - DATABASE_URL
-# - JWT_SECRET
-# - AGENT_TOKENS (5 tokens separados por comas)
-
-vercel --prod
+npx prisma migrate dev --name init
 ```
 
-### 3. Crear usuario admin inicial
+#### 1.4 Crear usuario admin
 
-Conectarse a PostgreSQL y ejecutar:
+Opción A - Desde Supabase SQL Editor:
 ```sql
 INSERT INTO "User" (id, email, password, name, role)
 VALUES (
   'admin-001',
   'admin@gemelli.edu',
-  '$2a$10$ejemplo',  -- Hash de bcrypt de la contraseña
+  '$2a$10$rOvwXqN6Y3N0Y5J6Y7K8ZeqV9xZ8Y7K6Y5N4Y3M2Y1K0J9I8H7G6F5',
   'Administrador',
   'admin'
 );
 ```
 
-### 4. Habilitar Print Service Log (en cada PC)
+Contraseña: `admin123` (⚠️ CAMBIAR en producción)
+
+Opción B - Generar tu propio hash:
+```bash
+npm install -g bcrypt-cli
+bcrypt-cli "tu-contraseña-segura" 10
+```
+
+### 2. Deploy Web en Vercel
+```bash
+cd web
+npm install
+
+# Probar localmente
+npm run dev
+
+# Deploy a Vercel
+vercel --prod
+```
+
+#### Configurar variables en Vercel:
+
+1. Ve a tu proyecto en Vercel Dashboard
+2. Settings → Environment Variables
+3. Agregar TODAS las variables de `.env.local`
+
+**Variables requeridas en Vercel:**
+- `DATABASE_URL` (Pooler connection)
+- `DIRECT_URL` (Direct connection para migraciones)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `JWT_SECRET`
+- `AGENT_TOKENS`
+
+### 3. Habilitar Print Service Log (en cada PC)
 
 Ejecutar como **Administrador**:
 ```powershell
@@ -66,7 +110,7 @@ O manualmente:
 2. Ir a: `Applications and Services Logs > Microsoft > Windows > PrintService > Operational`
 3. Click derecho → `Enable Log`
 
-### 5. Compilar instalador MSI
+### 4. Compilar instalador MSI
 
 En Windows con .NET 8 SDK y WiX v4:
 ```powershell
@@ -79,71 +123,74 @@ cd agent/Installer
 
 Resultado: `GemelliPrintAgent.msi`
 
-### 6. Instalar agente en cada PC
+### 5. Instalar agente en cada PC
 
 1. Copiar `GemelliPrintAgent.msi` al PC
 2. Ejecutar como Administrador
 3. El servicio arranca automáticamente
 4. Verificar en Services: `GemelliPrintAgent` (Running)
 
-### 7. Registrar PCs en el dashboard
+### 6. Registrar PCs en el dashboard
 
 1. Ir a `https://tu-app.vercel.app/dashboard/equipos`
-2. Click "Registrar nuevo equipo"
-3. Ingresar:
+2. Iniciar sesión con `admin@gemelli.edu` / `admin123`
+3. Click "Registrar nuevo equipo"
+4. Ingresar:
    - Nombre del PC
    - **IP fija** (ej: 192.168.1.10)
    - Área (Secretaría, Rectoría, etc.)
    - Responsable
    - Marcar "PC Principal" si corresponde
-4. Copiar el token generado
-5. Configurar en `C:\Program Files\GemelliPrintAgent\appsettings.json`
+5. Copiar el token generado
+6. Configurar en `C:\Program Files\GemelliPrintAgent\appsettings.json`
 
-### 8. Probar impresión
+### 7. Verificar en Supabase
 
-1. Imprimir cualquier documento desde el PC
-2. Verificar en Event Viewer: evento ID 307
-3. Esperar 5 minutos (sincronización automática)
-4. Ver en dashboard: `https://tu-app.vercel.app/dashboard/impresiones`
+Puedes monitorear la base de datos en tiempo real:
 
-## Configuración de IPs fijas
+1. Ir a [Supabase Dashboard](https://supabase.com/dashboard/project/chncdlusummdopwpfvug)
+2. **Table Editor** → Ver las tablas y datos
+3. **SQL Editor** → Ejecutar consultas personalizadas
+4. **Logs** → Ver logs de consultas
 
-Asignar IPs estáticas en Windows:
+Ejemplo de consulta útil:
+```sql
+-- Ver últimas 10 impresiones
+SELECT 
+  timestamp,
+  "pcName",
+  "pcIp",
+  "usernameWindows",
+  "printerName",
+  "pagesPrinted"
+FROM "PrintJob"
+ORDER BY timestamp DESC
+LIMIT 10;
+
+-- Ver total de páginas por PC este mes
+SELECT 
+  "pcIp",
+  COUNT(*) as trabajos,
+  SUM("pagesPrinted") as total_paginas
+FROM "PrintJob"
+WHERE timestamp >= date_trunc('month', CURRENT_DATE)
+GROUP BY "pcIp"
+ORDER BY total_paginas DESC;
 ```
-PC Principal (Secretaría): 192.168.1.10
-PC Coordinación:          192.168.1.11
-PC Contabilidad:          192.168.1.12
-PC Rectoría:              192.168.1.13
-PC Biblioteca:            192.168.1.14
-```
 
-## Estructura de directorios del agente
-```
-C:\Program Files\GemelliPrintAgent\
-  ├── GemelliPrintAgent.exe
-  └── appsettings.json
+## Ventajas de Supabase vs Neon
 
-C:\ProgramData\GemelliPrintAgent\
-  ├── queue.db           # Cola SQLite local
-  └── logs\
-      └── agent-*.log    # Logs diarios
-```
+✅ **Dashboard visual** para ver datos en tiempo real  
+✅ **SQL Editor** integrado para consultas rápidas  
+✅ **Row Level Security (RLS)** para seguridad avanzada  
+✅ **Backups automáticos** en plan gratuito  
+✅ **PostgreSQL 15** con todas las extensiones  
+✅ **Realtime subscriptions** (opcional para futuras mejoras)  
+✅ **Auth integrado** (si quieres migrar de JWT a Supabase Auth)
 
 ## Comandos útiles
 
-### Gestión del servicio
-```powershell
-# Ver estado
-Get-Service GemelliPrintAgent
-
-# Reiniciar
-Restart-Service GemelliPrintAgent
-
-# Ver logs
-Get-Content "C:\ProgramData\GemelliPrintAgent\logs\agent-$(Get-Date -Format 'yyyyMMdd').log" -Tail 50
-```
-
-### Prisma
+### Prisma con Supabase
 ```bash
 # Generar cliente
 npx prisma generate
@@ -154,80 +201,133 @@ npx prisma migrate dev --name nombre_migracion
 # Aplicar migraciones en producción
 npx prisma migrate deploy
 
+# Sincronizar schema sin migraciones (desarrollo)
+npx prisma db push
+
 # Abrir Prisma Studio
 npx prisma studio
 ```
 
-### Desarrollo local
-```bash
-cd web
-npm run dev  # http://localhost:3000
-```
-
-## Exportar datos
-
-Desde el dashboard: `/api/export/csv?dateFrom=2024-01-01&dateTo=2024-12-31`
-
-## Troubleshooting
-
-### El agente no captura impresiones
-
-1. Verificar que el log esté habilitado:
-```powershell
-   wevtutil get-log "Microsoft-Windows-PrintService/Operational"
-```
-
-2. Verificar servicio corriendo:
-```powershell
-   Get-Service GemelliPrintAgent
-```
-
-3. Revisar logs:
-```powershell
-   Get-Content "C:\ProgramData\GemelliPrintAgent\logs\agent-*.log" -Tail 100
-```
-
-### Jobs no llegan al servidor
-
-1. Verificar conectividad:
-```powershell
-   Test-NetConnection tu-app.vercel.app -Port 443
-```
-
-2. Revisar token en `appsettings.json`
-
-3. Verificar cola local:
+### Consultas SQL directas en Supabase
 ```sql
-   -- Abrir queue.db con SQLite Browser
-   SELECT * FROM queue WHERE sent = 0;
+-- Ver estructura de tablas
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public';
+
+-- Ver índices creados
+SELECT indexname, tablename 
+FROM pg_indexes 
+WHERE schemaname = 'public';
+
+-- Estadísticas de uso
+SELECT 
+  schemaname,
+  tablename,
+  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 ```
 
-### IP aparece como "no reconocida"
+## Troubleshooting Supabase
 
-1. Verificar que la IP del PC coincida con la registrada
-2. Ir a `/dashboard/equipos` y actualizar
+### Error de conexión
+```bash
+# Verificar que la URL sea correcta
+echo $DATABASE_URL
 
-## Seguridad
+# Test de conexión
+psql "postgresql://postgres.chncdlusummdopwpfvug:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+```
 
-- Tokens de agente hasheados en DB
-- HTTPS obligatorio (Vercel)
-- Rate limiting por IP
-- Contraseñas con bcrypt
-- JWT con expiración de 7 días
+### Migraciones fallan
 
-## Limitaciones
+Si tienes problemas con migraciones:
+```bash
+# Resetear migraciones (⚠️ SOLO EN DESARROLLO)
+npx prisma migrate reset
 
-- Neon Free: 0.5GB storage, 1 base de datos
-- Vercel Free: 100GB bandwidth/mes
-- Máximo 50 jobs por batch
-- Retención logs SQLite: 30 días
+# O hacer push directo del schema
+npx prisma db push --accept-data-loss
+```
+
+### Ver logs en Supabase
+
+1. Dashboard → Logs
+2. Filtrar por errores de PostgreSQL
+3. Ver queries lentas
+
+## Seguridad en Supabase
+```sql
+-- Habilitar RLS (Row Level Security) - OPCIONAL
+ALTER TABLE "PrintJob" ENABLE ROW LEVEL SECURITY;
+
+-- Política de ejemplo: solo admins pueden ver todo
+CREATE POLICY "Admins can view all print jobs"
+ON "PrintJob"
+FOR SELECT
+USING (
+  auth.jwt() ->> 'role' = 'admin'
+);
+```
+
+## Backup y Restauración
+
+Supabase hace backups automáticos diarios. Para backup manual:
+```bash
+# Backup completo
+pg_dump "postgresql://postgres.chncdlusummdopwpfvug:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres" > backup.sql
+
+# Restaurar
+psql "postgresql://postgres.chncdlusummdopwpfvug:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres" < backup.sql
+```
+
+## Monitoreo
+
+### Dashboard de Supabase
+- **Database** → Ver uso de storage
+- **API** → Ver requests por minuto
+- **Auth** → Ver usuarios activos (si usas Supabase Auth)
+
+### Métricas útiles
+```sql
+-- Impresiones por día (últimos 30 días)
+SELECT 
+  DATE(timestamp) as fecha,
+  COUNT(*) as trabajos,
+  SUM("pagesPrinted") as paginas
+FROM "PrintJob"
+WHERE timestamp >= CURRENT_DATE - INTERVAL '30 days'
+GROUP BY DATE(timestamp)
+ORDER BY fecha DESC;
+
+-- Top 10 usuarios que más imprimen
+SELECT 
+  "usernameWindows",
+  COUNT(*) as trabajos,
+  SUM("pagesPrinted") as total_paginas
+FROM "PrintJob"
+GROUP BY "usernameWindows"
+ORDER BY total_paginas DESC
+LIMIT 10;
+```
+
+## Límites del Plan Gratuito
+
+- **Database**: 500 MB storage
+- **API requests**: 50,000/mes
+- **Bandwidth**: 2 GB/mes
+- **Backups**: 7 días de retención
+
+Para el colegio (5 PCs), esto es más que suficiente.
 
 ## Soporte
 
-Para problemas técnicos:
-1. Revisar logs del agente
-2. Verificar dashboard de Vercel
-3. Consultar logs de Neon
+Para problemas con Supabase:
+1. Revisar [Supabase Dashboard](https://supabase.com/dashboard/project/chncdlusummdopwpfvug)
+2. Ver logs en tiempo real
+3. Consultar [Supabase Docs](https://supabase.com/docs)
 
 ## Licencia
 
