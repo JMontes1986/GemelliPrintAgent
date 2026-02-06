@@ -1,5 +1,5 @@
 {
-  "name": "gemelli-print-control",
+  "name": "gemelli-print-control-web",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -7,6 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && next build",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev",
@@ -33,5 +35,46 @@
     "prisma": "^5.9.1",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   }
 }
+```
+
+## 5. `.vercelignore` - CREAR NUEVO
+
+**`.vercelignore`** (crear en la raíz)
+```
+# Ignorar agente .NET
+agent/
+
+# Ignorar scripts
+scripts/
+
+# Ignorar documentación
+README.md
+*.md
+
+# Ignorar archivos de desarrollo
+.vscode/
+.idea/
+.git/
+
+# Ignorar archivos locales
+*.local
+.env.local
+```
+
+## 6. Configuración CRÍTICA en Vercel Dashboard
+
+Ve a tu proyecto en Vercel y configura esto:
+
+### Settings → General
+```
+Root Directory: web
+Framework Preset: Next.js
+Build Command: npm run build
+Output Directory: .next
+Install Command: npm install
+Node.js Version: 20.x
