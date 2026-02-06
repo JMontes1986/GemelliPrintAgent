@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -12,7 +13,7 @@ model User {
   email     String   @unique
   password  String
   name      String
-  role      String   @default("auditor") // admin, auditor
+  role      String   @default("auditor")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -58,7 +59,7 @@ model PrintJob {
   copies          Int       @default(1)
   duplex          Boolean?
   color           Boolean?
-  status          String    @default("submitted") // submitted, completed, canceled, error
+  status          String    @default("submitted")
   createdAt       DateTime  @default(now())
   
   agent           Agent?    @relation(fields: [pcIp], references: [pcIp])
