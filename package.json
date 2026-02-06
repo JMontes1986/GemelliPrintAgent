@@ -1,0 +1,14 @@
+{
+  "name": "gemelli-print-control-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd web && npm install && npx prisma generate && npm run build",
+    "dev": "cd web && npm run dev",
+    "start": "cd web && npm start",
+    "install:web": "cd web && npm install"
+  },
+  "workspaces": [
+    "web"
+  ]
+}
