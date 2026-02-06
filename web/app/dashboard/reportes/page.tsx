@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getApiUrl } from '@/lib/api'
 
 export default function ReportesPage() {
   const [report, setReport] = useState<any>(null)
@@ -12,13 +13,16 @@ export default function ReportesPage() {
   }, [year, month])
 
   const fetchReport = async () => {
-    const response = await fetch(`/api/reports/monthly?year=${year}&month=${month}`)
+    const response = await fetch(getApiUrl(`/api/reports/monthly?year=${year}&month=${month}`))
     const data = await response.json()
     setReport(data)
   }
 
   const handleExport = () => {
-    window.open(`/api/export/csv?dateFrom=${year}-${month}-01&dateTo=${year}-${month}-31`, '_blank')
+    window.open(
+      getApiUrl(`/api/export/csv?dateFrom=${year}-${month}-01&dateTo=${year}-${month}-31`),
+      '_blank'
+    )
   }
 
   if (!report) return <div>Cargando...</div>
