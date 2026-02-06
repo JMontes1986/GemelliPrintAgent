@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Product Id="*" 
+           Name="Gemelli Print Agent" 
+           Language="1033" 
+           Version="1.0.0.0" 
+           Manufacturer="Colegio Gemelli" 
+           UpgradeCode="12345678-1234-1234-1234-123456789012">
+    
+    <Package InstallerVersion="500" 
+             Compressed="yes" 
+             InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="Una versión más reciente ya está instalada." />
+    
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="Gemelli Print Agent" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="ServiceComponent" />
+    </Feature>
+
+    <Property Id="APIBASEURL" Value="https://your-vercel-app.vercel.app" />
+    <Property Id="AGENTTOKEN" Value="" />
+
+    <UI>
+      <UIRef Id="WixUI_Minimal" />
+    </UI>
+
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="GemelliPrintAgent" />
+      </Directory>
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="AppDataFolder" Name="GemelliPrintAgent" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable" Guid="*">
+        <File Id="GemelliPrintAgentExe" 
+              Source="$(var.PublishDir)\GemelliPrintAgent.exe" 
+              KeyPath="yes" />
+        <File Id="AppSettings" 
+              Source="$(var.PublishDir)\appsettings.json" />
+      </Component>
+    </ComponentGroup>
+
+    <Component Id="ServiceComponent" Directory="INSTALLFOLDER" Guid="*">
+      <ServiceInstall Id="ServiceInstaller"
+                      Type="ownProcess"
+                      Name="GemelliPrintAgent"
+                      DisplayName="Gemelli Print Agent"
+                      Description="Servicio de auditoría de impresiones para Colegio Gemelli"
+                      Start="auto"
+                      Account="LocalSystem"
+                      ErrorControl="normal">
+        <ServiceConfig DelayedAutoStart="yes" 
+                       OnInstall="yes" 
+                       OnReinstall="yes" />
+      </ServiceInstall>
+      
+      <ServiceControl Id="StartService"
+                      Start="install"
+                      Stop="both"
+                      Remove="uninstall"
+                      Name="GemelliPrintAgent"
+                      Wait="yes" />
+    </Component>
+  </Fragment>
+</Wix>
