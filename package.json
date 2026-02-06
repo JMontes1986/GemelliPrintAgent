@@ -1,53 +1,5 @@
 {
   "name": "gemelli-print-control",
   "version": "1.0.0",
-  "private": true,
-  "workspaces": [
-    "web"
-  ]
+  "private": true
 }
-```
-
-### 5. Capturas de la configuración correcta en Vercel
-
-Cuando crees el proyecto, debe verse así:
-
-**Configure Project:**
-```
-Project Name: gemelli-print-agent
-Framework Preset: Next.js
-Root Directory: web  ← MUY IMPORTANTE
-```
-
-**Build & Development Settings:**
-```
-Build Command: (dejar vacío - usará npm run build automáticamente)
-Output Directory: (dejar vacío - usará .next automáticamente)  
-Install Command: (dejar vacío - usará npm install automáticamente)
-```
-
-### 6. Si ya tienes el proyecto creado en Vercel
-
-Ve a **Settings → General** y cambia:
-```
-Root Directory: web
-Framework Preset: Next.js
-```
-
-Luego **Save** y **Redeploy**.
-
-### 7. Resumen de archivos en la raíz del proyecto
-```
-GemelliPrintAgent/
-├── .gitignore
-├── package.json        ← Simple (solo workspaces)
-├── README.md
-├── agent/
-├── scripts/
-└── web/               ← Root Directory apunta aquí
-    ├── app/
-    ├── components/
-    ├── lib/
-    ├── prisma/
-    ├── package.json   ← El importante para build
-    └── ...
