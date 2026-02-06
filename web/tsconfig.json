@@ -1,0 +1,78 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+### 7. Root - .gitignore
+
+**`.gitignore`**
+```
+# Dependencies
+node_modules/
+web/node_modules/
+
+# Build outputs
+web/.next/
+web/out/
+agent/bin/
+agent/obj/
+agent/Installer/publish/
+agent/Installer/*.msi
+agent/Installer/*.wixobj
+agent/Installer/*.wixpdb
+
+# Environment
+.env
+.env.local
+.env.*.local
+web/.env
+web/.env.local
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+web/prisma/migrations/*_init/
+
+# Logs
+*.log
+logs/
+agent/GemelliPrintAgent/bin/
+agent/GemelliPrintAgent/obj/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
