@@ -37,6 +37,7 @@ DIRECT_URL="postgresql://postgres.chncdlusummdopwpfvug:[PASSWORD]@aws-0-us-east-
 NEXT_PUBLIC_SUPABASE_URL="https://chncdlusummdopwpfvug.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNobmNkbHVzdW1tZG9wd3BmdnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzODUxOTYsImV4cCI6MjA4NTk2MTE5Nn0.ODsCwSCTJJU7uKWlFfMSDhQBENQTm9d5wQ9h4hxxEOA"
 SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNobmNkbHVzdW1tZG9wd3BmdnVnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDM4NTE5NiwiZXhwIjoyMDg1OTYxMTk2fQ.1IOkyPxMJYY49ihCcS6b5SfrmhYCJl0a_Wpwos2drLk"
+NEXT_PUBLIC_API_BASE_URL="https://tu-app.vercel.app"
 JWT_SECRET="tu-secreto-jwt-aqui"
 AGENT_TOKENS="token1,token2,token3,token4,token5"
 ```
@@ -95,6 +96,7 @@ vercel --prod
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_API_BASE_URL`
 - `JWT_SECRET`
 - `AGENT_TOKENS`
 
