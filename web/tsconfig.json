@@ -25,17 +25,3 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
-```
-
-### 6. Configuración de Vercel Dashboard
-
-**Ve a tu proyecto en Vercel → Settings → General:**
-```
-Framework Preset: Next.js
-Root Directory: web
-Node.js Version: 20.x
-
-Build & Development Settings:
-  Build Command: npm run build
-  Output Directory: (dejar vacío)
-  Install Command: npm install
