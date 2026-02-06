@@ -72,10 +72,3 @@ export default async function DashboardPage() {
     </div>
   )
 }
-```
-
-**`web/.env.example`**
-```
-DATABASE_URL="postgresql://user:password@host/db?sslmode=require"
-JWT_SECRET="change-this-secret-key"
-AGENT_TOKENS="token1,token2,token3,token4,token5"
