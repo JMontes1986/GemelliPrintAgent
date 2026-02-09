@@ -18,7 +18,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, email, password } = payload
+    const name = payload.name?.trim()
+    const email = payload.email?.trim().toLowerCase()
+    const password = payload.password
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -72,6 +74,33 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         )
       }
+
+      if (error.code === 'P2021' || error.code === 'P2022') {
+        return NextResponse.json(
+          {
+            error:
+              'La base de datos no está sincronizada con el esquema. Ejecuta las migraciones.'
+          },
+          { status: 500 }
+        )
+      }
+    }
+
+    if (error instanceof Prisma.PrismaClientValidationError) {
+      return NextResponse.json(
+        { error: 'Los datos enviados no son válidos' },
+        { status: 400 }
+      )
+    }
+
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      return NextResponse.json(
+        {
+          error:
+            'No fue posible conectar con la base de datos. Verifica la configuración.'
+        },
+        { status: 500 }
+      )
     }
     
     console.error('Register error:', error)
