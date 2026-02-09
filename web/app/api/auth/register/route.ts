@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, signToken } from '@/lib/auth'
+import { Prisma } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json()
+    let payload: { name?: string; email?: string; password?: string }
+
+    try {
+      payload = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'El cuerpo de la solicitud no es válido' },
+        { status: 400 }
+      )
+    }
+
+    const { name, email, password } = payload
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -29,7 +41,8 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        role: 'auditor'
       }
     })
 
@@ -50,6 +63,15 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Ya existe un usuario con este email' },
+          { status: 409 }
+        )
+      }
+    }
+    
     console.error('Register error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
