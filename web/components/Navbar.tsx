@@ -16,6 +16,7 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/dashboard/impresiones', label: 'Impresiones' },
     { href: '/dashboard/equipos', label: 'Equipos' },
+    { href: '/dashboard/usuarios', label: 'Usuarios' },
     { href: '/dashboard/reportes', label: 'Reportes' }
   ]
 
