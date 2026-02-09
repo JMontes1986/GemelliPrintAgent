@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword, signToken } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
 
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     let payload: { name?: string; email?: string; password?: string }
