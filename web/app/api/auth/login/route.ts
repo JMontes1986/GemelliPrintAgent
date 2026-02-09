@@ -6,6 +6,16 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json(
+        {
+          error:
+            'La variable DATABASE_URL no está configurada. Verifica las variables de entorno.'
+        },
+        { status: 500 }
+      )
+    }
+    
     const { email, password } = await request.json()
 
     const user = await prisma.user.findUnique({
