@@ -106,18 +106,29 @@ export async function POST(request: NextRequest) {
     if (error instanceof Prisma.PrismaClientInitializationError) {
       const errorCode = error.errorCode
       const errorMessage =
-        errorCode === 'P1001'
-          ? 'No se pudo alcanzar la base de datos. Revisa la conectividad y las reglas de red.'
-          : errorCode === 'P1002'
-            ? 'Tiempo de espera al conectar a la base de datos. Verifica el pool y la latencia.'
-            : 'No fue posible conectar con la base de datos. Verifica la configuración.'
+        errorCode === 'P1000'
+          ? 'Credenciales inválidas para la base de datos. Verifica usuario y contraseña.'
+          : errorCode === 'P1001'
+            ? 'No se pudo alcanzar la base de datos. Revisa la conectividad y las reglas de red.'
+            : errorCode === 'P1002'
+              ? 'Tiempo de espera al conectar a la base de datos. Verifica el pool y la latencia.'
+              : errorCode === 'P1003'
+                ? 'La base de datos indicada no existe. Revisa el nombre en la URL de conexión.'
+                : errorCode === 'P1010'
+                  ? 'El usuario no tiene permisos para la base de datos. Revisa los roles.'
+                  : errorCode === 'P1011'
+                    ? 'No fue posible abrir la conexión con la base de datos. Verifica el host y el puerto.'
+                    : 'No fue posible conectar con la base de datos. Verifica la configuración.'
 
       console.error('Database initialization error:', {
         code: errorCode,
         message: error.message
       })
 
-      return NextResponse.json({ error: errorMessage }, { status: 500 })
+      return NextResponse.json(
+        { error: errorMessage, code: errorCode ?? 'UNKNOWN' },
+        { status: 500 }
+      )
     }
     
     console.error('Register error:', error)
