@@ -7,6 +7,16 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json(
+        {
+          error:
+            'La variable DATABASE_URL no está configurada. Verifica las variables de entorno.'
+        },
+        { status: 500 }
+      )
+    }
+    
     let payload: { name?: string; email?: string; password?: string }
 
     try {
