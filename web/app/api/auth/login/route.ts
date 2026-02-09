@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { comparePassword, signToken } from '@/lib/auth'
+import { Prisma } from '@prisma/client'
 
 export const runtime = 'nodejs'
 
@@ -56,6 +57,23 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      const errorCode = error.errorCode
+      const errorMessage =
+        errorCode === 'P1001'
+          ? 'No se pudo alcanzar la base de datos. Revisa la conectividad y las reglas de red.'
+          : errorCode === 'P1002'
+            ? 'Tiempo de espera al conectar a la base de datos. Verifica el pool y la latencia.'
+            : 'No fue posible conectar con la base de datos. Verifica la configuración.'
+
+      console.error('Database initialization error:', {
+        code: errorCode,
+        message: error.message
+      })
+
+      return NextResponse.json({ error: errorMessage }, { status: 500 })
+    }
+    
     console.error('Login error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
