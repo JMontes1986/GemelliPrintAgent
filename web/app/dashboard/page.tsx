@@ -63,6 +63,11 @@ export default async function DashboardPage() {
             </a>
           </li>
           <li>
+            <a href="/dashboard/usuarios" className="text-blue-600 hover:underline">
+              Administrar usuarios
+            </a>
+          </li>
+          <li>
             <a href={getApiUrl('/api/export/csv')} className="text-blue-600 hover:underline">
               Exportar CSV
             </a>
