@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { getSupabaseConnectionHints } from '@/lib/supabase-connection'
 
 const envStatus = (value?: string) => ({
   present: Boolean(value),
@@ -80,7 +81,8 @@ const getDiagnostics = async () => {
     results.push({ label: 'Consulta tabla User', ok: false, detail: message })
   }
 
-  const hints = [getPoolerHint(process.env.DATABASE_URL)].filter(Boolean) as string[]
+  const connectionHints = getSupabaseConnectionHints(process.env)
+  const hints = [getPoolerHint(process.env.DATABASE_URL), ...connectionHints.errors, ...connectionHints.hints].filter(Boolean) as string[]
 
   return { env, redacted, parsed, results, hints }
 }
