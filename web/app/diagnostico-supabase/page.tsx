@@ -15,6 +15,33 @@ const redactUrl = (value?: string) => {
   }
 }
 
+const parseUrlInfo = (value?: string) => {
+  if (!value) {
+    return { host: null, port: null, database: null, username: null }
+  }
+  try {
+    const url = new URL(value)
+    return {
+      host: url.hostname,
+      port: url.port || null,
+      database: url.pathname.replace('/', '') || null,
+      username: url.username || null
+    }
+  } catch {
+    return { host: 'formato_invalido', port: null, database: null, username: null }
+  }
+}
+
+const getPoolerHint = (databaseUrl?: string) => {
+  const info = parseUrlInfo(databaseUrl)
+  if (!info.host || info.host === 'formato_invalido') return null
+  if (!info.host.includes('pooler.supabase.com')) return null
+  if (!info.username || !info.username.includes('.')) {
+    return 'El pooler de Supabase requiere que el usuario incluya el project ref (por ejemplo: postgres.<project-ref>).'
+  }
+  return null
+}
+
 const getDiagnostics = async () => {
   const env = {
     databaseUrl: envStatus(process.env.DATABASE_URL),
@@ -30,6 +57,11 @@ const getDiagnostics = async () => {
     supabaseUrl: redactUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
   }
 
+  const parsed = {
+    databaseUrl: parseUrlInfo(process.env.DATABASE_URL),
+    directUrl: parseUrlInfo(process.env.DIRECT_URL)
+  }
+  
   const results: Array<{ label: string; ok: boolean; detail?: string }> = []
 
   try {
@@ -48,7 +80,9 @@ const getDiagnostics = async () => {
     results.push({ label: 'Consulta tabla User', ok: false, detail: message })
   }
 
-  return { env, redacted, results }
+  const hints = [getPoolerHint(process.env.DATABASE_URL)].filter(Boolean) as string[]
+
+  return { env, redacted, parsed, results, hints }
 }
 
 export default async function DiagnosticoSupabasePage() {
@@ -89,6 +123,16 @@ export default async function DiagnosticoSupabasePage() {
               </li>
             ))}
           </ul>
+          {diagnostics.hints.length ? (
+            <div className="mt-4 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
+              <p className="font-medium text-amber-100">Sugerencias</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {diagnostics.hints.map((hint) => (
+                  <li key={hint}>{hint}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </section>
 
         <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 text-sm text-slate-300">
@@ -98,6 +142,23 @@ export default async function DiagnosticoSupabasePage() {
             <li>DIRECT_URL: {diagnostics.redacted.directUrl ?? 'N/D'}</li>
             <li>SUPABASE_URL: {diagnostics.redacted.supabaseUrl ?? 'N/D'}</li>
           </ul>
+          <div className="mt-4 text-xs text-slate-400">
+            <p className="font-medium text-slate-300">Componentes detectados</p>
+            <ul className="mt-2 space-y-1">
+              <li>
+                DATABASE_URL → host: {diagnostics.parsed.databaseUrl.host ?? 'N/D'}, puerto:{' '}
+                {diagnostics.parsed.databaseUrl.port ?? 'N/D'}, db:{' '}
+                {diagnostics.parsed.databaseUrl.database ?? 'N/D'}, usuario:{' '}
+                {diagnostics.parsed.databaseUrl.username ?? 'N/D'}
+              </li>
+              <li>
+                DIRECT_URL → host: {diagnostics.parsed.directUrl.host ?? 'N/D'}, puerto:{' '}
+                {diagnostics.parsed.directUrl.port ?? 'N/D'}, db:{' '}
+                {diagnostics.parsed.directUrl.database ?? 'N/D'}, usuario:{' '}
+                {diagnostics.parsed.directUrl.username ?? 'N/D'}
+              </li>
+            </ul>
+          </div>
         </section>
       </div>
     </main>
