@@ -37,8 +37,8 @@ const getPoolerHint = (databaseUrl?: string) => {
   const info = parseUrlInfo(databaseUrl)
   if (!info.host || info.host === 'formato_invalido') return null
   if (!info.host.includes('pooler.supabase.com')) return null
-  if (!info.username || !info.username.includes('.')) {
-    return 'El pooler de Supabase requiere que el usuario incluya el project ref (por ejemplo: postgres.<project-ref>).'
+  if (!info.username || !info.username.startsWith('postgres.') || !info.username.includes('.')) {
+    return 'El pooler de Supabase requiere usar postgres.<project-ref> como usuario en DATABASE_URL.'
   }
   return null
 }
