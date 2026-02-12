@@ -13,6 +13,28 @@ const isValidUrl = (value?: string) => {
   }
 }
 
+const parseUrl = (value?: string) => {
+  if (!value) return null
+
+  try {
+    return new URL(value)
+  } catch {
+    return null
+  }
+}
+
+const getPoolerUserHint = (value?: string) => {
+  const url = parseUrl(value)
+
+  if (!url || !url.hostname.includes('pooler.supabase.com')) return null
+
+  if (!url.username || !url.username.includes('.')) {
+    return 'El pooler de Supabase requiere que el usuario incluya el project ref (por ejemplo: postgres.<project-ref>).'
+  }
+
+  return null
+}
+
 export const getSupabaseConnectionHints = (env: NodeJS.ProcessEnv): SupabaseConnectionHints => {
   const errors: string[] = []
   const hints: string[] = []
@@ -43,6 +65,11 @@ export const getSupabaseConnectionHints = (env: NodeJS.ProcessEnv): SupabaseConn
     hints.push('Considera agregar sslmode=require en DATABASE_URL para conexiones al pooler de Supabase.')
   }
 
+  const poolerUserHint = getPoolerUserHint(databaseUrl)
+  if (poolerUserHint) {
+    errors.push(poolerUserHint)
+  }
+  
   return { errors, hints }
 }
 
