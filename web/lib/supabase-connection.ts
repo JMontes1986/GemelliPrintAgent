@@ -28,8 +28,8 @@ const getPoolerUserHint = (value?: string) => {
 
   if (!url || !url.hostname.includes('pooler.supabase.com')) return null
 
-  if (!url.username || !url.username.includes('.')) {
-    return 'El pooler de Supabase requiere que el usuario incluya el project ref (por ejemplo: postgres.<project-ref>).'
+  if (!url.username || !url.username.startsWith('postgres.') || !url.username.includes('.')) {
+    return 'El pooler de Supabase requiere usar postgres.<project-ref> como usuario en DATABASE_URL.'
   }
 
   return null
@@ -62,7 +62,7 @@ export const getSupabaseConnectionHints = (env: NodeJS.ProcessEnv): SupabaseConn
   }
 
   if (databaseUrl && databaseUrl.includes('pooler.supabase.com') && !databaseUrl.includes('sslmode=require')) {
-    hints.push('Considera agregar sslmode=require en DATABASE_URL para conexiones al pooler de Supabase.')
+    errors.push('DATABASE_URL del pooler debe incluir sslmode=require para evitar rechazos de conexión.')
   }
 
   const poolerUserHint = getPoolerUserHint(databaseUrl)
