@@ -10,9 +10,19 @@ export { getSupabaseConnectionHints }
 const configError = buildSupabaseConnectionError(process.env)
 
 if (configError) {
-  throw new Error(configError)
+  console.warn(configError)
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+const prismaClient = globalForPrisma.prisma ?? new PrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+export const prisma = new Proxy(prismaClient, {
+  get(target, property, receiver) {
+    if (configError) {
+      throw new Error(configError)
+    }
+
+    return Reflect.get(target, property, receiver)
+  }
+}) as PrismaClient
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaClient
