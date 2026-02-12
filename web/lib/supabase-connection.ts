@@ -45,3 +45,19 @@ export const getSupabaseConnectionHints = (env: NodeJS.ProcessEnv): SupabaseConn
 
   return { errors, hints }
 }
+
+export const buildSupabaseConnectionError = (env: NodeJS.ProcessEnv): string | null => {
+  const { errors, hints } = getSupabaseConnectionHints(env)
+
+  if (errors.length === 0) {
+    return null
+  }
+
+  const details = [
+    'Configuración de Supabase/Prisma inválida.',
+    ...errors.map((error) => `- Error: ${error}`),
+    ...hints.map((hint) => `- Sugerencia: ${hint}`),
+  ]
+
+  return details.join('\n')
+}
