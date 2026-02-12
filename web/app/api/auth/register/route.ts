@@ -103,6 +103,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof Prisma.PrismaClientInitializationError) {
+      if (error.message.includes('Tenant or user not found')) {
+        return NextResponse.json(
+          {
+            error:
+              'Supabase rechazó las credenciales de conexión (Tenant o usuario no encontrado). Verifica que el usuario en DATABASE_URL sea postgres.<project-ref> y agrega sslmode=require.'
+          },
+          { status: 500 }
+        )
+      }
+      
       const errorCode = error.errorCode
       const errorMessage =
         errorCode === 'P1000'
@@ -126,6 +136,16 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { error: errorMessage, code: errorCode ?? 'UNKNOWN' },
+        { status: 500 }
+      )
+    }
+    
+    if (error instanceof Error && error.message.includes('Tenant or user not found')) {
+      return NextResponse.json(
+        {
+          error:
+            'Supabase rechazó las credenciales de conexión (Tenant o usuario no encontrado). Verifica que el usuario en DATABASE_URL sea postgres.<project-ref> y agrega sslmode=require.'
+        },
         { status: 500 }
       )
     }
