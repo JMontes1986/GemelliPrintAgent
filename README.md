@@ -100,6 +100,8 @@ vercel --prod
 - `JWT_SECRET`
 - `AGENT_TOKENS`
 
+- `AGENT_MSI_URL` (URL pública del MSI que se descargará desde el dashboard)
+  
 ### 3. Habilitar Print Service Log (en cada PC)
 
 Ejecutar como **Administrador**:
@@ -143,8 +145,10 @@ Resultado: `GemelliPrintAgent.msi`
    - Área (Secretaría, Rectoría, etc.)
    - Responsable
    - Marcar "PC Principal" si corresponde
-5. Copiar el token generado
-6. Configurar en `C:\Program Files\GemelliPrintAgent\appsettings.json`
+5. Click en **"Descargar MSI"** para bajar el instalador Windows
+6. Instalar el MSI como Administrador
+7. Copiar el token generado (se muestra al descargar)
+8. Configurar en `C:\Program Files\GemelliPrintAgent\appsettings.json`
 
 ### 7. Verificar en Supabase
 
