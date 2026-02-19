@@ -103,6 +103,10 @@ export default function EquiposManager() {
     }
   }
 
+  const isUsbConnection = formData.connectionType === 'usb'
+  const connectionIdentifierLabel = isUsbConnection ? 'Identificador USB (opcional)' : 'IP Fija'
+  const connectionIdentifierPlaceholder = isUsbConnection ? 'Ej: USB-Caja-Recepción' : '192.168.1.10'
+  
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-6">
@@ -163,17 +167,17 @@ export default function EquiposManager() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                {formData.connectionType === 'usb' ? 'Identificador USB (opcional)' : 'IP Fija'}
+                {connectionIdentifierLabel}
               </label>
               <input
                 type="text"
                 value={formData.pcIp}
                 onChange={(e) => setFormData({...formData, pcIp: e.target.value})}
-                placeholder={formData.connectionType === 'usb' ? 'Ej: USB-Caja-Recepción' : '192.168.1.10'}
+                placeholder={connectionIdentifierPlaceholder}
                 className="w-full px-3 py-2 border rounded-md"
-                placeholder={formData.connectionType === 'usb' ? 'Ej: USB-Caja-Recepción' : '192.168.1.10'}
+                required={!isUsbConnection}
               />
-            {formData.connectionType === 'usb' && (
+            {isUsbConnection && (
                 <p className="text-xs text-gray-500 mt-1">
                   Si lo dejas vacío se generará automáticamente un identificador interno USB.
                 </p>
