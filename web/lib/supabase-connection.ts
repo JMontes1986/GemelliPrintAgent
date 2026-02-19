@@ -65,6 +65,16 @@ export const getSupabaseConnectionHints = (env: NodeJS.ProcessEnv): SupabaseConn
     errors.push('DATABASE_URL del pooler debe incluir sslmode=require para evitar rechazos de conexión.')
   }
 
+  if (
+    databaseUrl &&
+    databaseUrl.includes('pooler.supabase.com') &&
+    !databaseUrl.includes('pgbouncer=true')
+  ) {
+    hints.push(
+      'Si usas el pooler de Supabase en modo transaction, agrega pgbouncer=true en DATABASE_URL para evitar errores de prepared statements con Prisma.'
+    )
+  }
+  
   const poolerUserHint = getPoolerUserHint(databaseUrl)
   if (poolerUserHint) {
     errors.push(poolerUserHint)
