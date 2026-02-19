@@ -7,11 +7,16 @@ export const runtime = 'nodejs'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { pcName, pcIp, area, responsable, isPrimary } = body
+    const { pcName, pcIp, area, responsable, isPrimary, connectionType } = body
 
-    if (!pcName || !pcIp) {
+    const isUsbConnection = connectionType === 'usb'
+    const normalizedPcIp = isUsbConnection
+      ? (pcIp?.trim() || `USB-${crypto.randomUUID()}`)
+      : pcIp?.trim()
+
+    if (!pcName || !normalizedPcIp) {
       return NextResponse.json(
-        { error: 'pcName y pcIp son requeridos' },
+        { error: 'pcName e identificación de conexión son requeridos' },
         { status: 400 }
       )
     }
@@ -29,7 +34,7 @@ export async function POST(request: NextRequest) {
     const agent = await prisma.agent.create({
       data: {
         pcName,
-        pcIp,
+        pcIp: normalizedPcIp,
         area,
         responsable,
         isPrimary: isPrimary || false,
