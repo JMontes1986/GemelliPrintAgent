@@ -62,6 +62,27 @@ export default function EquiposManager() {
     setAreas(data.areas || [])
   }
 
+  const handleDownloadInstaller = async (agentId: string, pcName: string) => {
+    const response = await fetch(getApiUrl(`/api/agents/${agentId}/installer`), {
+      cache: 'no-store'
+    })
+
+    if (!response.ok) {
+      alert('No se pudo generar el instalador para este equipo.')
+      return
+    }
+
+    const scriptBlob = await response.blob()
+    const downloadUrl = URL.createObjectURL(scriptBlob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = `instalar-agente-${pcName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-')}.ps1`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(downloadUrl)
+  }
+  
   const handleCreateArea = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -236,6 +257,7 @@ export default function EquiposManager() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trabajos</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Última actividad</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Instalador</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -262,6 +284,14 @@ export default function EquiposManager() {
                   }`}>
                     {agent.enabled ? 'Activo' : 'Inactivo'}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  <button
+                    onClick={() => handleDownloadInstaller(agent.id, agent.pcName)}
+                    className="bg-indigo-600 text-white px-3 py-1.5 rounded-md hover:bg-indigo-700"
+                  >
+                    Generar agente
+                  </button>
                 </td>
               </tr>
             ))}
