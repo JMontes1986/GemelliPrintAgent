@@ -30,33 +30,31 @@ export async function GET(
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
-    const configJson = JSON.stringify(
-      {
-        Logging: {
-          LogLevel: {
-            Default: 'Information',
-            'Microsoft.Hosting.Lifetime': 'Information'
-          }
-        },
-        ApiBaseUrl: appUrl,
-        AgentToken: agent.token
-      },
-      null,
-      2
-    )
+    const msiUrl = process.env.AGENT_MSI_URL || `${appUrl}/downloads/GemelliPrintAgent.msi`
 
-    const scriptContent = `# Instalador automático del agente GemelliPrintAgent\n# Equipo: ${agent.pcName}\n\n$ErrorActionPreference = "Stop"\n\n$msiPath = Join-Path $PSScriptRoot "GemelliPrintAgent.msi"\nif (-not (Test-Path $msiPath)) {\n  Write-Host "No se encontró GemelliPrintAgent.msi en la misma carpeta del script." -ForegroundColor Red\n  Write-Host "Copia el MSI junto a este script y vuelve a ejecutar." -ForegroundColor Yellow\n  exit 1\n}\n\nWrite-Host "Instalando GemelliPrintAgent..." -ForegroundColor Cyan\nStart-Process -FilePath "msiexec.exe" -ArgumentList "/i \"$msiPath\" /qn" -Wait\n\n$configPath = "C:\\Program Files\\GemelliPrintAgent\\appsettings.json"\n$configDirectory = Split-Path -Parent $configPath\nif (-not (Test-Path $configDirectory)) {\n  New-Item -ItemType Directory -Path $configDirectory -Force | Out-Null\n}\n\n@'\n${configJson}\n'@ | Set-Content -Path $configPath -Encoding UTF8\n\ntry {\n  Restart-Service -Name "GemelliPrintAgent" -ErrorAction Stop\n  Write-Host "Servicio reiniciado correctamente." -ForegroundColor Green\n} catch {\n  Write-Host "No fue posible reiniciar automáticamente el servicio. Reinícialo manualmente desde Services." -ForegroundColor Yellow\n}\n\nWrite-Host "Instalación finalizada para el equipo ${agent.pcName}." -ForegroundColor Green\nWrite-Host "Configuración guardada en: $configPath" -ForegroundColor Gray\n`
+    const msiResponse = await fetch(msiUrl, { cache: 'no-store' })
 
-    const filename = `instalar-agente-${sanitizeFileSegment(agent.pcName) || agent.id}.ps1`
+    if (!msiResponse.ok) {
+      console.error('No se pudo obtener el MSI:', msiResponse.status, msiUrl)
+      return NextResponse.json(
+        { error: 'No se pudo descargar el instalador MSI. Verifica AGENT_MSI_URL.' },
+        { status: 500 }
+      )
+    }
 
-    return new NextResponse(scriptContent, {
+    const msiBuffer = await msiResponse.arrayBuffer()
+    const filename = `GemelliPrintAgent-${sanitizeFileSegment(agent.pcName) || agent.id}.msi`
+
+    return new NextResponse(msiBuffer, {
       headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${filename}"`
+        'Content-Type': 'application/x-msdownload',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'X-Agent-Token': agent.token,
+        'X-Agent-Name': agent.pcName
       }
     })
   } catch (error) {
-    console.error('Error generating installer script:', error)
+    console.error('Error generating MSI installer:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
