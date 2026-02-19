@@ -1,0 +1,52 @@
+name: Build and Release Agent
+
+on:
+  push:
+    tags:
+      - 'agent-v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore agent/GemelliPrintAgent/GemelliPrintAgent.csproj
+
+      - name: Publish agent (self-contained exe)
+        run: |
+          dotnet publish agent/GemelliPrintAgent/GemelliPrintAgent.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o agent/publish
+
+      - name: Create release zip
+        run: |
+          Compress-Archive -Path agent/publish/* -DestinationPath GemelliPrintAgent-win-x64.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || 'agent-latest' }}
+          name: Gemelli Print Agent ${{ github.ref_name || 'latest' }}
+          files: GemelliPrintAgent-win-x64.zip
+          body: |
+            ## Gemelli Print Agent
+
+            ### Instalación automática
+            1. Descarga el instalador desde el panel de administración
+            2. Ejecuta el script como Administrador en el PC destino
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
