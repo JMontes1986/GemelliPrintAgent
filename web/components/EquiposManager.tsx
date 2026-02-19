@@ -76,7 +76,7 @@ export default function EquiposManager() {
     const downloadUrl = URL.createObjectURL(installerBlob)
     const link = document.createElement('a')
     link.href = downloadUrl
-    link.download = `GemelliPrintAgent-${pcName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-')}.msi`
+    link.download = `instalar-agente-${pcName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-')}.ps1`
     document.body.appendChild(link)
     link.click()
     link.remove()
