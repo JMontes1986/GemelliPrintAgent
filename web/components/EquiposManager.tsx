@@ -41,13 +41,20 @@ export default function EquiposManager() {
   }, [])
 
   const fetchAgents = async () => {
-    const response = await fetch(getApiUrl('/api/agents'))
+    const response = await fetch(getApiUrl('/api/agents'), { cache: 'no-store' })
+    if (!response.ok) {
+      alert('No se pudieron cargar los equipos. Recarga la página e inténtalo de nuevo.')
+      return
+    }
     const data = await response.json()
-    setAgents(data.agents)
+    setAgents(data.agents || [])
   }
 
   const fetchAreas = async () => {
-    const response = await fetch(getApiUrl('/api/areas'))
+    const response = await fetch(getApiUrl('/api/areas'), { cache: 'no-store' })
+    if (!response.ok) {
+      return
+    }
     const data = await response.json()
     setAreas(data.areas || [])
   }
@@ -86,7 +93,7 @@ export default function EquiposManager() {
       alert(`Equipo registrado. Token: ${data.agent.token}`)
       setShowForm(false)
       setFormData({ pcName: '', pcIp: '', area: '', responsable: '', isPrimary: false })
-      fetchAgents()
+      await fetchAgents()
     } else {
       const error = await response.json()
       alert(`Error: ${error.error}`)
