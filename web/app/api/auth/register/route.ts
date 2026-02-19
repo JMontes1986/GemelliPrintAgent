@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    let payload: { name?: string; email?: string; password?: string }
+    let payload: { name?: unknown; email?: unknown; password?: unknown }
 
     try {
       payload = await request.json()
@@ -28,10 +28,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const name = payload.name?.trim()
-    const email = payload.email?.trim().toLowerCase()
-    const password = payload.password
-
+    const name =
+      typeof payload.name === 'string' ? payload.name.trim() : ''
+    const email =
+      typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : ''
+    const password =
+      typeof payload.password === 'string' ? payload.password : ''
+    
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'Todos los campos son obligatorios' },
@@ -148,6 +151,15 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       )
+    }
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Configuración de Supabase/Prisma inválida.')) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 500 }
+        )
+      }
     }
     
     console.error('Register error:', error)
