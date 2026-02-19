@@ -98,6 +98,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+      if (error.message.toLowerCase().includes('prepared statement')) {
+        return NextResponse.json(
+          {
+            error:
+              'Error de conexión con el pool de base de datos. Revisa DATABASE_URL y habilita pgbouncer=true con connection_limit=1 en Supabase pooler.'
+          },
+          { status: 500 }
+        )
+      }
+    }
+    
     if (error instanceof Prisma.PrismaClientValidationError) {
       return NextResponse.json(
         { error: 'Los datos enviados no son válidos' },
