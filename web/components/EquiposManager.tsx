@@ -23,6 +23,8 @@ interface Area {
 }
 
 export default function EquiposManager() {
+  type ConnectionType = 'network' | 'usb'
+  
   const [agents, setAgents] = useState<Agent[]>([])
   const [areas, setAreas] = useState<Area[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -30,6 +32,7 @@ export default function EquiposManager() {
   const [formData, setFormData] = useState({
     pcName: '',
     pcIp: '',
+    connectionType: 'network' as ConnectionType,
     area: '',
     responsable: '',
     isPrimary: false
@@ -92,7 +95,7 @@ export default function EquiposManager() {
       const data = await response.json()
       alert(`Equipo registrado. Token: ${data.agent.token}`)
       setShowForm(false)
-      setFormData({ pcName: '', pcIp: '', area: '', responsable: '', isPrimary: false })
+      setFormData({ pcName: '', pcIp: '', connectionType: 'network', area: '', responsable: '', isPrimary: false })
       await fetchAgents()
     } else {
       const error = await response.json()
@@ -148,15 +151,33 @@ export default function EquiposManager() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">IP Fija</label>
+              <label className="block text-sm font-medium mb-1">Tipo de conexión</label>
+              <select
+                value={formData.connectionType}
+                onChange={(e) => setFormData({ ...formData, connectionType: e.target.value as ConnectionType })}
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                <option value="network">Red (IP fija)</option>
+                <option value="usb">USB (directa)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {formData.connectionType === 'usb' ? 'Identificador USB (opcional)' : 'IP Fija'}
+              </label>
               <input
                 type="text"
                 value={formData.pcIp}
                 onChange={(e) => setFormData({...formData, pcIp: e.target.value})}
-                placeholder="192.168.1.10"
+                placeholder={formData.connectionType === 'usb' ? 'Ej: USB-Caja-Recepción' : '192.168.1.10'}
                 className="w-full px-3 py-2 border rounded-md"
-                required
+                placeholder={formData.connectionType === 'usb' ? 'Ej: USB-Caja-Recepción' : '192.168.1.10'}
               />
+            {formData.connectionType === 'usb' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Si lo dejas vacío se generará automáticamente un identificador interno USB.
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Área</label>
