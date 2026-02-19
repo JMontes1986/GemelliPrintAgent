@@ -17,9 +17,16 @@ interface Agent {
   }
 }
 
+interface Area {
+  id: string
+  name: string
+}
+
 export default function EquiposManager() {
   const [agents, setAgents] = useState<Agent[]>([])
+  const [areas, setAreas] = useState<Area[]>([])
   const [showForm, setShowForm] = useState(false)
+  const [newAreaName, setNewAreaName] = useState('')
   const [formData, setFormData] = useState({
     pcName: '',
     pcIp: '',
@@ -30,6 +37,7 @@ export default function EquiposManager() {
 
   useEffect(() => {
     fetchAgents()
+    fetchAreas()
   }, [])
 
   const fetchAgents = async () => {
@@ -38,6 +46,32 @@ export default function EquiposManager() {
     setAgents(data.agents)
   }
 
+  const fetchAreas = async () => {
+    const response = await fetch(getApiUrl('/api/areas'))
+    const data = await response.json()
+    setAreas(data.areas || [])
+  }
+
+  const handleCreateArea = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const response = await fetch(getApiUrl('/api/areas'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newAreaName })
+    })
+
+    if (response.ok) {
+      setNewAreaName('')
+      fetchAreas()
+      alert('Área creada correctamente')
+      return
+    }
+
+    const error = await response.json()
+    alert(`Error: ${error.error}`)
+  }
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -72,8 +106,30 @@ export default function EquiposManager() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-md mb-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gray-50 p-4 rounded-md mb-6 space-y-4">
+          <form onSubmit={handleCreateArea} className="border-b pb-4">
+            <h3 className="text-lg font-semibold mb-3">Crear área</h3>
+            <div className="flex flex-col md:flex-row gap-3">
+              <input
+                type="text"
+                value={newAreaName}
+                onChange={(e) => setNewAreaName(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="Ej: Laboratorio de Cómputo"
+                required
+              />
+              <button
+                type="submit"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+              >
+                Guardar área
+              </button>
+            </div>
+          </form>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <h3 className="text-lg font-semibold">Registrar equipo</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Nombre del PC</label>
               <input
@@ -103,11 +159,9 @@ export default function EquiposManager() {
                 className="w-full px-3 py-2 border rounded-md"
               >
                 <option value="">Seleccionar...</option>
-                <option value="Secretaría">Secretaría</option>
-                <option value="Coordinación">Coordinación</option>
-                <option value="Contabilidad">Contabilidad</option>
-                <option value="Rectoría">Rectoría</option>
-                <option value="Biblioteca">Biblioteca</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.name}>{area.name}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -120,22 +174,23 @@ export default function EquiposManager() {
               />
             </div>
           </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={formData.isPrimary}
-              onChange={(e) => setFormData({...formData, isPrimary: e.target.checked})}
-              className="mr-2"
-            />
-            <label className="text-sm">Marcar como PC Principal</label>
-          </div>
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700"
-          >
-            Registrar Equipo
-          </button>
-        </form>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={formData.isPrimary}
+                onChange={(e) => setFormData({...formData, isPrimary: e.target.checked})}
+                className="mr-2"
+              />
+              <label className="text-sm">Marcar como PC Principal</label>
+            </div>
+            <button
+              type="submit"
+              className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700"
+            >
+              Registrar Equipo
+            </button>
+          </form>
+        </div>
       )}
 
       <div className="overflow-x-auto">
