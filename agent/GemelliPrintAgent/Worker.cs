@@ -29,10 +29,14 @@ public class Worker : BackgroundService
 
         _eventLogMonitor.Start();
 
+        // Enviar heartbeat inicial al arrancar
+        await _apiClient.SendHeartbeatAsync(stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
+                await _apiClient.SendHeartbeatAsync(stoppingToken);
                 await _apiClient.SendQueuedJobsAsync(stoppingToken);
                 await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
