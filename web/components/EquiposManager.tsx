@@ -72,15 +72,21 @@ export default function EquiposManager() {
       return
     }
 
-    const scriptBlob = await response.blob()
-    const downloadUrl = URL.createObjectURL(scriptBlob)
+    const installerBlob = await response.blob()
+    const downloadUrl = URL.createObjectURL(installerBlob)
     const link = document.createElement('a')
     link.href = downloadUrl
-    link.download = `instalar-agente-${pcName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-')}.ps1`
+    link.download = `GemelliPrintAgent-${pcName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-')}.msi`
     document.body.appendChild(link)
     link.click()
     link.remove()
     URL.revokeObjectURL(downloadUrl)
+
+    const token = response.headers.get('X-Agent-Token')
+    if (token) {
+      await navigator.clipboard.writeText(token).catch(() => undefined)
+      alert(`MSI descargado. Token del equipo: ${token}\n\nSe copió al portapapeles si el navegador lo permitió. Configúralo en appsettings.json después de instalar.`)
+    }
   }
   
   const handleCreateArea = async (e: React.FormEvent) => {
@@ -290,7 +296,7 @@ export default function EquiposManager() {
                     onClick={() => handleDownloadInstaller(agent.id, agent.pcName)}
                     className="bg-indigo-600 text-white px-3 py-1.5 rounded-md hover:bg-indigo-700"
                   >
-                    Generar agente
+                    Descargar MSI
                   </button>
                 </td>
               </tr>
