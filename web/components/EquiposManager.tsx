@@ -177,12 +177,21 @@ export default function EquiposManager() {
             </span>
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          {showForm ? 'Cancelar' : '+ Nuevo Equipo'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={fetchAgents}
+            className="border border-gray-300 text-gray-600 px-3 py-2 rounded-md hover:bg-gray-50 flex items-center gap-1 text-sm"
+            title="Actualizar estado de conexión"
+          >
+            🔄 Actualizar
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
+            {showForm ? 'Cancelar' : '+ Nuevo Equipo'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
