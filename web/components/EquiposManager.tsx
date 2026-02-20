@@ -282,6 +282,7 @@ export default function EquiposManager() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conexión</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Instalador</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Eliminar</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -313,6 +314,14 @@ export default function EquiposManager() {
                     className="bg-indigo-600 text-white px-3 py-1.5 rounded-md hover:bg-indigo-700 text-xs"
                   >
                     ⬇ Instalador
+                  </button>
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  <button
+                    onClick={() => handleDeleteAgent(agent.id, agent.pcName)}
+                    className="bg-red-500 text-white px-3 py-1.5 rounded-md hover:bg-red-600 text-xs"
+                  >
+                    🗑 Eliminar
                   </button>
                 </td>
               </tr>
