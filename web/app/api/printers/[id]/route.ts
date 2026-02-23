@@ -11,10 +11,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const body = await request.json()
     const model = body.model?.trim() || null
-
+    const connection = body.connection?.trim() || null
+    
     const printer = await prisma.printer.update({
       where: { id: params.id },
-      data: { model }
+      data: { model, connection }
     })
 
     return NextResponse.json({ printer })
