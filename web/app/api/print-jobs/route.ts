@@ -21,6 +21,10 @@ export async function POST(request: NextRequest) {
     const results = []
 
     for (const job of jobs) {
+      const printerName = typeof job.printerName === 'string' && job.printerName.trim()
+        ? job.printerName.trim()
+        : 'Impresora no identificada'
+      
       // Verificar si el agente existe
       let agent = await prisma.agent.findUnique({
         where: { pcIp: job.pcIp }
@@ -51,8 +55,8 @@ export async function POST(request: NextRequest) {
 
       // Crear o actualizar impresora
       await prisma.printer.upsert({
-        where: { name: job.printerName },
-        create: { name: job.printerName },
+        where: { name: printerName },
+        create: { name: printerName },
         update: {}
       })
 
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
           pcName: job.pcName,
           pcIp: job.pcIp,
           usernameWindows: job.usernameWindows,
-          printerName: job.printerName,
+          printerName: printerName,
           jobId: job.jobId,
           documentName: job.documentName || 'N/D',
           pagesPrinted: job.pagesPrinted || 0,
