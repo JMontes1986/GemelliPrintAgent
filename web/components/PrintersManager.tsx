@@ -7,6 +7,7 @@ interface Printer {
   id: string
   name: string
   model: string | null
+  connection: string | null
   createdAt: string
   totalJobs: number
   lastUsage: {
@@ -31,7 +32,8 @@ export default function PrintersManager() {
   const [loading, setLoading] = useState(true)
   const [name, setName] = useState('')
   const [model, setModel] = useState('')
-
+  const [connection, setConnection] = useState('')
+  
   const fetchPrinters = async () => {
     setLoading(true)
     const response = await fetch(getApiUrl('/api/printers'), { cache: 'no-store' })
@@ -56,7 +58,7 @@ export default function PrintersManager() {
     const response = await fetch(getApiUrl('/api/printers'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, model })
+      body: JSON.stringify({ name, model, connection })
     })
 
     if (!response.ok) {
@@ -67,18 +69,25 @@ export default function PrintersManager() {
 
     setName('')
     setModel('')
+    setConnection('')
     await fetchPrinters()
     alert('Impresora registrada/actualizada correctamente.')
   }
 
-  const handleUpdateModel = async (printer: Printer) => {
+  const handleEditPrinter = async (printer: Printer) => {
     const newModel = window.prompt(`Modelo para ${printer.name}:`, printer.model || '')
     if (newModel === null) return
 
+    const newConnection = window.prompt(
+      `Conexión (IP o USB/puerto) para ${printer.name}:`,
+      printer.connection || ''
+    )
+    if (newConnection === null) return
+    
     const response = await fetch(getApiUrl(`/api/printers/${printer.id}`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: newModel })
+      body: JSON.stringify({ model: newModel, connection: newConnection })
     })
 
     if (!response.ok) {
@@ -99,7 +108,7 @@ export default function PrintersManager() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <div>
           <label className="block text-sm font-medium mb-1">Nombre de impresora</label>
           <input
@@ -119,6 +128,15 @@ export default function PrintersManager() {
             placeholder="Ej: HP LaserJet Pro M404"
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Conexión IP o USB (opcional)</label>
+          <input
+            value={connection}
+            onChange={(e) => setConnection(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md"
+            placeholder="Ej: 192.168.1.45 o USB001"
+          />
+        </div>
         <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 h-10">
           Guardar impresora
         </button>
@@ -130,6 +148,7 @@ export default function PrintersManager() {
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Impresora</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Modelo</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conexión</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trabajos</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Último uso</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Última PC origen</th>
@@ -139,17 +158,18 @@ export default function PrintersManager() {
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-sm text-gray-500 text-center">Cargando...</td>
+                <td colSpan={7} className="px-4 py-6 text-sm text-gray-500 text-center">Cargando...</td>
               </tr>
             ) : printers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-sm text-gray-500 text-center">Aún no hay impresoras registradas.</td>
+                <td colSpan={7} className="px-4 py-6 text-sm text-gray-500 text-center">Aún no hay impresoras registradas.</td>
               </tr>
             ) : (
               printers.map((printer) => (
                 <tr key={printer.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium">{printer.name}</td>
                   <td className="px-4 py-3 text-sm">{printer.model || '-'}</td>
+                  <td className="px-4 py-3 text-sm">{printer.connection || "-"}</td>
                   <td className="px-4 py-3 text-sm">{printer.totalJobs}</td>
                   <td className="px-4 py-3 text-sm">
                     {printer.lastUsage ? formatDate(printer.lastUsage.timestamp) : 'Sin actividad'}
@@ -161,10 +181,10 @@ export default function PrintersManager() {
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <button
-                      onClick={() => handleUpdateModel(printer)}
+                      onClick={() => handleEditPrinter(printer)}
                       className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-xs"
                     >
-                      Editar modelo
+                      Editar
                     </button>
                   </td>
                 </tr>
