@@ -7,6 +7,7 @@ public class PrintJob
     public string PcIp { get; set; } = "";
     public string UsernameWindows { get; set; } = "";
     public string PrinterName { get; set; } = "";
+    public string? PrinterConnection { get; set; }
     public string? JobId { get; set; }
     public string DocumentName { get; set; } = "N/D";
     public int PagesPrinted { get; set; }
