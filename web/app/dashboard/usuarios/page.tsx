@@ -1,4 +1,28 @@
+"use client"
+
+import { useEffect, useState } from 'react'
+import { getApiUrl } from '@/lib/api'
+
+interface Area {
+  id: string
+  name: string
+}
+
 export default function UsuariosPage() {
+  const [areas, setAreas] = useState<Area[]>([])
+
+  useEffect(() => {
+    const fetchAreas = async () => {
+      const response = await fetch(getApiUrl('/api/areas'), { cache: 'no-store' })
+      if (!response.ok) return
+
+      const data = await response.json()
+      setAreas(data.areas || [])
+    }
+
+    fetchAreas()
+  }, [])
+  
   return (
     <div className="space-y-8">
       <header className="space-y-2">
@@ -86,10 +110,12 @@ export default function UsuariosPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700">Equipo asignado</label>
               <select className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none">
-                <option>Seleccionar equipo</option>
-                <option>Impresora HP 01</option>
-                <option>Impresora Canon 02</option>
-                <option>Impresora Zebra 03</option>
+                <option value="">Seleccionar equipo</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.name}>
+                    {area.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
