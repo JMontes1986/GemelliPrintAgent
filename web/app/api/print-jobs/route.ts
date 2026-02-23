@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateAgentToken } from '@/lib/auth'
+import { isMissingPrinterConnectionColumn } from '@/lib/printer-db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,11 +55,30 @@ export async function POST(request: NextRequest) {
       }
 
       // Crear o actualizar impresora
-      await prisma.printer.upsert({
-        where: { name: printerName },
-        create: { name: printerName },
-        update: {}
-      })
+      const printerConnection = typeof job.printerConnection === 'string' && job.printerConnection.trim()
+        ? job.printerConnection.trim()
+        : null
+
+      try {
+        await prisma.printer.upsert({
+          where: { name: printerName },
+          create: {
+            name: printerName,
+            connection: printerConnection
+          },
+          update: printerConnection ? { connection: printerConnection } : {}
+        })
+      } catch (error) {
+        if (!isMissingPrinterConnectionColumn(error)) {
+          throw error
+        }
+
+        await prisma.printer.upsert({
+          where: { name: printerName },
+          create: { name: printerName },
+          update: {}
+        })
+      }
 
       // Crear print job
       const printJob = await prisma.printJob.create({
