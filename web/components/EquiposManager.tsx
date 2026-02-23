@@ -114,6 +114,24 @@ export default function EquiposManager() {
     link.remove()
     URL.revokeObjectURL(downloadUrl)
   }
+
+  const handleDeleteAgent = async (agentId: string, pcName: string) => {
+    const confirmed = window.confirm(`¿Eliminar el equipo ${pcName}? Esta acción no se puede deshacer.`)
+    if (!confirmed) return
+
+    const response = await fetch(getApiUrl(`/api/agents/${agentId}`), {
+      method: 'DELETE'
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'No se pudo eliminar el equipo.' }))
+      alert(`Error: ${error.error}`)
+      return
+    }
+
+    await fetchAgents()
+    alert('Equipo eliminado correctamente.')
+  }
   
   const handleCreateArea = async (e: React.FormEvent) => {
     e.preventDefault()
