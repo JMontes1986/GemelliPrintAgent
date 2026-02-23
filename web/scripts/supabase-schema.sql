@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS "Printer" (
     id TEXT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
     model TEXT,
+    connection TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -174,10 +175,10 @@ VALUES (
 ON CONFLICT (email) DO NOTHING;
 
 -- Insertar impresoras del colegio
-INSERT INTO "Printer" (id, name, model, "createdAt")
+INSERT INTO "Printer" (id, name, model, connection, "createdAt")
 VALUES 
-    ('printer-' || gen_random_uuid()::text, 'Kyocera M3550idn', 'Kyocera M3550idn', CURRENT_TIMESTAMP),
-    ('printer-' || gen_random_uuid()::text, 'Epson L555', 'Epson L555', CURRENT_TIMESTAMP)
+    ('printer-' || gen_random_uuid()::text, 'Kyocera M3550idn', 'Kyocera M3550idn', NULL, CURRENT_TIMESTAMP),
+    ('printer-' || gen_random_uuid()::text, 'Epson L555', 'Epson L555', NULL, CURRENT_TIMESTAMP)
 ON CONFLICT (name) DO NOTHING;
 
 -- ============================================
