@@ -35,6 +35,7 @@ CREATE TABLE "Printer" (
     id TEXT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
     model TEXT,
+    connection TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -100,7 +101,7 @@ VALUES (
 );
 
 -- Impresoras iniciales
-INSERT INTO "Printer" (id, name, model)
+INSERT INTO "Printer" (id, name, model, connection)
 VALUES 
-    ('printer-001', 'Kyocera M3550idn', 'Kyocera M3550idn'),
-    ('printer-002', 'Epson L555', 'Epson L555');
+    ('printer-001', 'Kyocera M3550idn', 'Kyocera M3550idn', NULL),
+    ('printer-002', 'Epson L555', 'Epson L555', NULL);
