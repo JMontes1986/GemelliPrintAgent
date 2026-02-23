@@ -1,4 +1,7 @@
 using System.Diagnostics.Eventing.Reader;
+using System.Management;
+using System.Net;
+using System.Text.RegularExpressions;
 using GemelliPrintAgent.Models;
 using Microsoft.Extensions.Logging;
 
@@ -11,6 +14,7 @@ public class EventLogMonitor
     private readonly LocalQueueService _queueService;
     private EventLogWatcher? _watcher;
     private readonly HashSet<long> _processedRecordIds = new();
+    private readonly Dictionary<string, string?> _printerConnectionCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _recordLock = new();
     
     public EventLogMonitor(
@@ -133,13 +137,16 @@ public class EventLogMonitor
 
             if (properties.Count < 6) return null;
 
+            var printerName = properties.ElementAtOrDefault(5) ?? "Unknown";
+            
             return new PrintJob
             {
                 Timestamp = record.TimeCreated ?? DateTime.Now,
                 PcName = _systemInfo.PcName,
                 PcIp = _systemInfo.PcIp,
                 UsernameWindows = properties.ElementAtOrDefault(2) ?? Environment.UserName,
-                PrinterName = properties.ElementAtOrDefault(5) ?? "Unknown",
+                PrinterName = printerName,
+                PrinterConnection = ResolvePrinterConnection(printerName),
                 JobId = properties.ElementAtOrDefault(0) ?? null,
                 DocumentName = SanitizeDocumentName(properties.ElementAtOrDefault(1)),
                 PagesPrinted = ParseInt(properties.ElementAtOrDefault(7) ?? properties.ElementAtOrDefault(6), 1),
@@ -160,12 +167,70 @@ public class EventLogMonitor
         return name.Length > 255 ? name.Substring(0, 255) : name;
     }
 
+    private string? ResolvePrinterConnection(string? printerName)
+    {
+        if (string.IsNullOrWhiteSpace(printerName)) return null;
+
+        if (_printerConnectionCache.TryGetValue(printerName, out var cachedConnection))
+        {
+            return cachedConnection;
+        }
+
+        try
+        {
+            var safeName = printerName.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            using var searcher = new ManagementObjectSearcher(
+                $"SELECT PortName FROM Win32_Printer WHERE Name = \"{safeName}\""
+            );
+
+            foreach (ManagementObject printer in searcher.Get())
+            {
+                var portName = printer["PortName"]?.ToString()?.Trim();
+                var normalized = NormalizeConnection(portName);
+                _printerConnectionCache[printerName] = normalized;
+                return normalized;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "No fue posible resolver conexión para la impresora {Printer}", printerName);
+        }
+
+        _printerConnectionCache[printerName] = null;
+        return null;
+    }
+
+    private static string? NormalizeConnection(string? portName)
+    {
+        if (string.IsNullOrWhiteSpace(portName)) return null;
+
+        var trimmed = portName.Trim();
+
+        if (trimmed.StartsWith("USB", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed.ToUpperInvariant();
+        }
+
+        if (IPAddress.TryParse(trimmed, out _))
+        {
+            return trimmed;
+        }
+
+        var ipMatch = Regex.Match(trimmed, @"(?<!\d)(?:\d{1,3}\.){3}\d{1,3}(?!\d)");
+        if (ipMatch.Success && IPAddress.TryParse(ipMatch.Value, out _))
+        {
+            return ipMatch.Value;
+        }
+
+        return trimmed;
+    }
+    
     private static int ParseInt(string? value, int defaultValue)
     {
         return int.TryParse(value, out var result) ? result : defaultValue;
     }
 
-     private bool TryMarkRecordAsProcessed(long? recordId)
+    private bool TryMarkRecordAsProcessed(long? recordId)
     {
         if (!recordId.HasValue) return true;
 
