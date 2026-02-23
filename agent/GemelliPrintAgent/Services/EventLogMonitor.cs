@@ -10,7 +10,9 @@ public class EventLogMonitor
     private readonly SystemInfoService _systemInfo;
     private readonly LocalQueueService _queueService;
     private EventLogWatcher? _watcher;
-
+    private readonly HashSet<long> _processedRecordIds = new();
+    private readonly object _recordLock = new();
+    
     public EventLogMonitor(
         ILogger logger,
         SystemInfoService systemInfo,
@@ -25,6 +27,8 @@ public class EventLogMonitor
     {
         try
         {
+            CollectRecentEvents(TimeSpan.FromMinutes(30), 300);
+            
             var query = new EventLogQuery(
                 "Microsoft-Windows-PrintService/Operational",
                 PathType.LogName,
@@ -57,7 +61,8 @@ public class EventLogMonitor
         try
         {
             if (e.EventRecord == null) return;
-
+            if (!TryMarkRecordAsProcessed(e.EventRecord.RecordId)) return;
+            
             var printJob = ParseEventRecord(e.EventRecord);
             if (printJob != null)
             {
@@ -75,13 +80,58 @@ public class EventLogMonitor
         }
     }
 
+    public void CollectRecentEvents(TimeSpan lookback, int maxEvents)
+    {
+        try
+        {
+            var query = new EventLogQuery(
+                "Microsoft-Windows-PrintService/Operational",
+                PathType.LogName,
+                "*[System[(EventID=307)]]"
+            )
+            {
+                ReverseDirection = true
+            };
+
+            using var reader = new EventLogReader(query);
+            var threshold = DateTime.Now.Subtract(lookback);
+            var processed = 0;
+
+            while (processed < maxEvents)
+            {
+                using var record = reader.ReadEvent();
+                if (record == null) break;
+                if (record.TimeCreated.HasValue && record.TimeCreated.Value < threshold) break;
+                if (!TryMarkRecordAsProcessed(record.RecordId)) continue;
+
+                var printJob = ParseEventRecord(record);
+                if (printJob == null) continue;
+
+                _queueService.EnqueueJob(printJob);
+                processed++;
+            }
+
+            if (processed > 0)
+            {
+                _logger.LogInformation(
+                    "Se recuperaron {Count} eventos de impresión recientes",
+                    processed
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "No se pudieron recuperar eventos recientes");
+        }
+    }
+
     private PrintJob? ParseEventRecord(EventRecord record)
     {
         try
         {
             var properties = record.Properties.Select(p => p.Value?.ToString() ?? "").ToList();
 
-            if (properties.Count < 8) return null;
+            if (properties.Count < 6) return null;
 
             return new PrintJob
             {
@@ -92,7 +142,7 @@ public class EventLogMonitor
                 PrinterName = properties.ElementAtOrDefault(5) ?? "Unknown",
                 JobId = properties.ElementAtOrDefault(0) ?? null,
                 DocumentName = SanitizeDocumentName(properties.ElementAtOrDefault(1)),
-                PagesPrinted = ParseInt(properties.ElementAtOrDefault(7), 1),
+                PagesPrinted = ParseInt(properties.ElementAtOrDefault(7) ?? properties.ElementAtOrDefault(6), 1),
                 Copies = ParseInt(properties.ElementAtOrDefault(6), 1),
                 Status = "completed"
             };
@@ -113,5 +163,15 @@ public class EventLogMonitor
     private static int ParseInt(string? value, int defaultValue)
     {
         return int.TryParse(value, out var result) ? result : defaultValue;
+    }
+
+     private bool TryMarkRecordAsProcessed(long? recordId)
+    {
+        if (!recordId.HasValue) return true;
+
+        lock (_recordLock)
+        {
+            return _processedRecordIds.Add(recordId.Value);
+        }
     }
 }
