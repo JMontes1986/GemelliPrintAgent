@@ -49,6 +49,7 @@ model Printer {
   id        String     @id @default(cuid())
   name      String     @unique
   model     String?
+  connection String?
   createdAt DateTime   @default(now())
   printJobs PrintJob[]
 
