@@ -33,6 +33,7 @@ public class LocalQueueService
                 pc_ip TEXT NOT NULL,
                 username_windows TEXT NOT NULL,
                 printer_name TEXT NOT NULL,
+                printer_connection TEXT,
                 job_id TEXT,
                 document_name TEXT NOT NULL,
                 pages_printed INTEGER NOT NULL,
@@ -45,6 +46,17 @@ public class LocalQueueService
             )
         ";
         command.ExecuteNonQuery();
+
+        var alterCommand = connection.CreateCommand();
+        alterCommand.CommandText = "ALTER TABLE queue ADD COLUMN printer_connection TEXT";
+        try
+        {
+            alterCommand.ExecuteNonQuery();
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == 1 && ex.Message.Contains("duplicate column", StringComparison.OrdinalIgnoreCase))
+        {
+            // Columna ya existe
+        }
     }
 
     public void EnqueueJob(PrintJob job)
@@ -55,11 +67,11 @@ public class LocalQueueService
         var command = connection.CreateCommand();
         command.CommandText = @"
             INSERT INTO queue (
-                timestamp, pc_name, pc_ip, username_windows, printer_name,
+                timestamp, pc_name, pc_ip, username_windows, printer_name, printer_connection,
                 job_id, document_name, pages_printed, copies, duplex, color,
                 status, created_at
             ) VALUES (
-                @timestamp, @pc_name, @pc_ip, @username_windows, @printer_name,
+                @timestamp, @pc_name, @pc_ip, @username_windows, @printer_name, @printer_connection,
                 @job_id, @document_name, @pages_printed, @copies, @duplex, @color,
                 @status, @created_at
             )
@@ -70,6 +82,7 @@ public class LocalQueueService
         command.Parameters.AddWithValue("@pc_ip", job.PcIp);
         command.Parameters.AddWithValue("@username_windows", job.UsernameWindows);
         command.Parameters.AddWithValue("@printer_name", job.PrinterName);
+        command.Parameters.AddWithValue("@printer_connection", job.PrinterConnection ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@job_id", job.JobId ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@document_name", job.DocumentName);
         command.Parameters.AddWithValue("@pages_printed", job.PagesPrinted);
@@ -104,13 +117,14 @@ public class LocalQueueService
                 PcIp = reader.GetString(3),
                 UsernameWindows = reader.GetString(4),
                 PrinterName = reader.GetString(5),
-                JobId = reader.IsDBNull(6) ? null : reader.GetString(6),
-                DocumentName = reader.GetString(7),
-                PagesPrinted = reader.GetInt32(8),
-                Copies = reader.GetInt32(9),
-                Duplex = reader.IsDBNull(10) ? null : reader.GetInt32(10) == 1,
-                Color = reader.IsDBNull(11) ? null : reader.GetInt32(11) == 1,
-                Status = reader.GetString(12)
+                PrinterConnection = reader.IsDBNull(6) ? null : reader.GetString(6),
+                JobId = reader.IsDBNull(7) ? null : reader.GetString(7),
+                DocumentName = reader.GetString(8),
+                PagesPrinted = reader.GetInt32(9),
+                Copies = reader.GetInt32(10),
+                Duplex = reader.IsDBNull(11) ? null : reader.GetInt32(11) == 1,
+                Color = reader.IsDBNull(12) ? null : reader.GetInt32(12) == 1,
+                Status = reader.GetString(13)
             });
         }
 
