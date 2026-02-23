@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isMissingPrinterConnectionColumn } from '@/lib/printer-db'
 
 interface Params {
   params: {
@@ -18,10 +19,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       data.connection = connection
     }
         
-    const printer = await prisma.printer.update({
-      where: { id: params.id },
-      data: data as never
-    })
+    let printer
+
+    try {
+      printer = await prisma.printer.update({
+        where: { id: params.id },
+        data: data as never
+      })
+    } catch (error) {
+      if (!isMissingPrinterConnectionColumn(error)) {
+        throw error
+      }
+
+      printer = await prisma.printer.update({
+        where: { id: params.id },
+        data: { model }
+      })
+    }
 
     return NextResponse.json({ printer })
   } catch (error) {
