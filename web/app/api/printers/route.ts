@@ -24,11 +24,13 @@ export async function GET() {
 
     const mappedPrinters = printers.map((printer) => {
       const lastJob = printer.printJobs[0]
-
+      const connection = (printer as { connection?: string | null }).connection ?? null
+      
       return {
         id: printer.id,
         name: printer.name,
         model: printer.model,
+        connection,
         createdAt: printer.createdAt,
         totalJobs: printer._count.printJobs,
         lastUsage: lastJob
@@ -57,15 +59,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const name = body.name?.trim()
     const model = body.model?.trim() || null
-
+    const connection = body.connection?.trim() || null
+    
     if (!name) {
       return NextResponse.json({ error: 'El nombre de la impresora es obligatorio.' }, { status: 400 })
     }
 
+    const createData: Record<string, string | null> = { name, model }
+    const updateData: Record<string, string | null> = { model }
+
+    if (typeof body.connection === 'string') {
+      createData.connection = connection
+      updateData.connection = connection
+    }
+    
     const printer = await prisma.printer.upsert({
       where: { name },
-      create: { name, model },
-      update: { model }
+      create: createData as never,
+      update: updateData as never
     })
 
     return NextResponse.json({ printer })
