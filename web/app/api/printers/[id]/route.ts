@@ -3,13 +3,14 @@ import { prisma } from '@/lib/prisma'
 import { isMissingPrinterConnectionColumn } from '@/lib/printer-db'
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
+    const { id } = await params
     const body = await request.json()
     const model = body.model?.trim() || null
     const connection = body.connection?.trim() || null
@@ -23,7 +24,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     try {
       printer = await prisma.printer.update({
-        where: { id: params.id },
+        where: { id: id },
         data: data as never
       })
     } catch (error) {
@@ -32,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
 
       printer = await prisma.printer.update({
-        where: { id: params.id },
+        where: { id: id },
         data: { model }
       })
     }
@@ -49,8 +50,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
 export async function DELETE(_request: NextRequest, { params }: Params) {
   try {
+    const { id } = await params
     const printer = await prisma.printer.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: { name: true }
     })
 
@@ -69,7 +71,7 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
       )
     }
 
-    await prisma.printer.delete({ where: { id: params.id } })
+    await prisma.printer.delete({ where: { id: id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

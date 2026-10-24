@@ -13,11 +13,12 @@ function sanitizeFileSegment(value: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const agent = await prisma.agent.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         pcName: true,
